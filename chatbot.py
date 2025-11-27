@@ -19,55 +19,6 @@ load_dotenv()
 
 
 
-#  SQLite Database Setup
-
-DB_URL = "sqlite:///chat_history.db"
-engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
-Base = declarative_base()
-SessionLocal = sessionmaker(bind=engine)
-
-
-class ChatMessage(Base):
-    __tablename__ = "chat_messages"
-    id = Column(Integer, primary_key=True)
-    role = Column(String(16))  # "user" or "assistant"
-    content = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-
-Base.metadata.create_all(engine)
-
-
-def save_msg(role: str, content: str) -> None:
-    session = SessionLocal()
-    session.add(ChatMessage(role=role, content=content))
-    session.commit()
-    session.close()
-
-
-def load_history(limit: int = 50):
-    session = SessionLocal()
-    records = (
-        session.query(ChatMessage)
-        .order_by(ChatMessage.created_at.asc())
-        .limit(limit)
-        .all()
-    )
-    session.close()
-    messages = []
-    for r in records:
-        if r.role == "user":
-            messages.append(HumanMessage(content=r.content))
-        else:
-            messages.append(AIMessage(content=r.content))
-    return messages
-
-
-def clear_db() -> None:
-    session = SessionLocal()
-    session.query(ChatMessage).delete()
-    session.commit()
-    session.close()
 
 
 
