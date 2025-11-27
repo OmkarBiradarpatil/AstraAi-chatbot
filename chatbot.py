@@ -1,8 +1,4 @@
-# ==========================================
-# ✨ AstraAI — Ultra Max Gen-AI Chatbot
-# Speed. Clarity. Intelligence.
-# Built with ❤️ by: Omkar Biradarpatil
-# ==========================================
+
 
 import os
 import time
@@ -16,15 +12,15 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-# ==========================================
-# 🔐 Load Environment / API Keys
-# ==========================================
-load_dotenv()  # expects GROQ_API_KEY
+
+#  Load Environment / API Keys
+
+load_dotenv()  
 
 
-# ==========================================
-# 🗄️ SQLite Database Setup
-# ==========================================
+
+#  SQLite Database Setup
+
 DB_URL = "sqlite:///chat_history.db"
 engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
 Base = declarative_base()
@@ -74,9 +70,8 @@ def clear_db() -> None:
     session.close()
 
 
-# ==========================================
-# 🎨 Global Dark Theme + Comic Sans
-# ==========================================
+
+
 def inject_css():
     css = """
     <style>
@@ -156,9 +151,8 @@ def inject_css():
     st.markdown(css, unsafe_allow_html=True)
 
 
-# ==========================================
-# ⌨️ Typing Effect
-# ==========================================
+
+#  Typing Effect
 def typing_effect(text: str, placeholder, delay: float = 0.015) -> None:
     current = ""
     for word in text.split(" "):
@@ -168,9 +162,8 @@ def typing_effect(text: str, placeholder, delay: float = 0.015) -> None:
     placeholder.markdown(text)
 
 
-# ==========================================
-# 🌟 Page Config + Header
-# ==========================================
+
+#  Page Config + Header
 st.set_page_config(page_title="AstraAI", page_icon="✨", layout="wide")
 inject_css()
 
@@ -182,9 +175,9 @@ st.markdown(
 )
 st.markdown("")
 
-# ==========================================
-# 🧠 System Prompt (Persona)
-# ==========================================
+
+#  System Prompt (Persona)
+
 def system_prompt(mode: str) -> str:
     if mode == "Teacher Agent":
         return (
@@ -206,7 +199,7 @@ MODEL_NAME = "llama-3.3-70b-versatile"
 
 
 
-#  Layout: Left = Settings, Right = Chat
+#  Layout
 
 left_col, right_col = st.columns([1, 2.4])
 
