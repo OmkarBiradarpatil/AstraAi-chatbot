@@ -1,34 +1,24 @@
 
-
 import os
 import time
-from datetime import datetime
 from dotenv import load_dotenv
 import streamlit as st
 
 from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
-from sqlalchemy.orm import declarative_base, sessionmaker
+# ==========================================
+# 🔐 Load Environment Variables
+# ==========================================
+load_dotenv()   # needs GROQ_API_KEY
 
-
-#  Load Environment / API Keys
-
-load_dotenv()  
-
-
-
-
-
-
-
+# ==========================================
+# 🎨 Dark Theme + Comic Sans + Neon UI
+# ==========================================
 def inject_css():
     css = """
     <style>
-    * {
-        font-family: 'Comic Sans MS', sans-serif !important;
-    }
+    * { font-family: 'Comic Sans MS', sans-serif !important; }
 
     body, .stApp {
         background: radial-gradient(circle at top, #1a1a1a 0, #000000 55%);
@@ -69,7 +59,6 @@ def inject_css():
         background: rgba(255,255,255,0.08);
         border-radius: 12px;
     }
-
     .stChatMessage[data-testid="assistant"] {
         background: rgba(255,255,255,0.06);
         border-radius: 12px;
@@ -90,21 +79,20 @@ def inject_css():
         border-radius: 12px;
         box-shadow: 0 0 10px rgba(174,47,255,0.55);
     }
-
     .stButton>button:hover {
         transform: scale(1.04);
         box-shadow: 0 0 16px rgba(174,47,255,0.9);
     }
 
-    #MainMenu, footer {visibility: hidden;}
+    #MainMenu, footer { visibility: hidden; }
     </style>
     """
     st.markdown(css, unsafe_allow_html=True)
 
-
-
-#  Typing Effect
-def typing_effect(text: str, placeholder, delay: float = 0.015) -> None:
+# ==========================================
+# ⌨️ Typing Effect
+# ==========================================
+def typing_effect(text: str, placeholder, delay: float = 0.015):
     current = ""
     for word in text.split(" "):
         current += word + " "
@@ -112,9 +100,9 @@ def typing_effect(text: str, placeholder, delay: float = 0.015) -> None:
         time.sleep(delay)
     placeholder.markdown(text)
 
-
-
-#  Page Config + Header
+# ==========================================
+# 🌟 Page Config + Header
+# ==========================================
 st.set_page_config(page_title="AstraAI", page_icon="✨", layout="wide")
 inject_css()
 
@@ -126,9 +114,9 @@ st.markdown(
 )
 st.markdown("")
 
-
-#  System Prompt (Persona)
-
+# ==========================================
+# 🧠 System Persona Prompt
+# ==========================================
 def system_prompt(mode: str) -> str:
     if mode == "Teacher Agent":
         return (
@@ -145,16 +133,14 @@ def system_prompt(mode: str) -> str:
         "Answer clearly and accurately with a supportive tone."
     )
 
-
 MODEL_NAME = "llama-3.3-70b-versatile"
 
-
-
-#  Layout
-
+# ==========================================
+# 🔀 Layout: LEFT = Settings | RIGHT = Chat
+# ==========================================
 left_col, right_col = st.columns([1, 2.4])
 
-# ---------- LEFT: Settings Panel ----------
+# ---------- LEFT PANEL ----------
 with left_col:
     st.markdown('<div class="settings-box">', unsafe_allow_html=True)
     st.markdown('<div class="settings-title">⚙️ Settings</div>', unsafe_allow_html=True)
@@ -168,54 +154,47 @@ with left_col:
     temperature = st.slider("🎛️ Creativity", 0.0, 1.0, 0.25)
 
     st.markdown('<div class="label-small">🧹 Maintenance</div>', unsafe_allow_html=True)
+
     if st.button("Clear Chat History"):
-        clear_db()
-        if "messages" in st.session_state:
-            del st.session_state["messages"]
+        st.session_state.messages = [SystemMessage(content=system_prompt(mode))]
         st.success("Chat history cleared.")
         st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-# ---------- RIGHT: Chat Panel ----------
+# ---------- RIGHT PANEL ----------
 with right_col:
 
-    # Initialize / update chat history (with hidden system message at index 0)
+    # Initialize session chat storage
     if "messages" not in st.session_state:
-        history_messages = load_history()
-        st.session_state.messages = [SystemMessage(content=system_prompt(mode))] + history_messages
+        st.session_state.messages = [SystemMessage(content=system_prompt(mode))]
     else:
-        # update persona prompt
         st.session_state.messages[0] = SystemMessage(content=system_prompt(mode))
 
-    # Display history (skip system message at index 0)
+    # Show chat history (skip system message)
     for msg in st.session_state.messages[1:]:
         if isinstance(msg, HumanMessage):
             with st.chat_message("user"):
                 st.markdown(msg.content)
-        elif isinstance(msg, AIMessage):
+        else:
             with st.chat_message("assistant"):
                 st.markdown(msg.content)
 
-    # Initialize LLM
+    # Init model
     llm = ChatGroq(
         model=MODEL_NAME,
         temperature=temperature,
     )
 
-    # Chat input & response
+    # User input
     user_input = st.chat_input("Ask AstraAI anything...")
 
     if user_input:
-        # Show user message
         with st.chat_message("user"):
             st.markdown(user_input)
 
         st.session_state.messages.append(HumanMessage(content=user_input))
-        save_msg("user", user_input)
 
-        # Assistant response
         with st.chat_message("assistant"):
             placeholder = st.empty()
             placeholder.markdown("🤔 Thinking...")
@@ -223,11 +202,9 @@ with right_col:
             try:
                 response = llm.invoke(st.session_state.messages)
                 reply = response.content
-
                 typing_effect(reply, placeholder)
 
                 st.session_state.messages.append(AIMessage(content=reply))
-                save_msg("assistant", reply)
 
             except Exception as e:
-                placeholder.markdown(f"❌ Error: {e}")
+                placeholder.markdown(f"❌ Error: {str(e)}")
